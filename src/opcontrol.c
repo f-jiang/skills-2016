@@ -153,3 +153,12 @@ void operatorControl()
 		delay(20);
 	}
 }
+
+/** task example code
+ * http://www.vexforum.com/index.php/10328-cody-s-pros-tutorial-series/p3#p96810
+ * http://www.vexforum.com/index.php/10048-purdue-robotics-os-pros-now-available/p6#p95114
+ */
+
+/**	pid
+ * http://www.vexforum.com/index.php/11759-pid-help
+ */
