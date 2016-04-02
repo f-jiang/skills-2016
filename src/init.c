@@ -33,6 +33,9 @@
  */
 
 #include "main.h"
+#include "lfilter.h"
+
+#define DRIVE_NUM_FILTER_CYCLES 12
 
 /*
  * Runs pre-initialization code. This function will be started in kernel mode one time while the
@@ -42,8 +45,7 @@
  * states (digitalWrite()) of limit switches, push buttons, and solenoids. It can also safely
  * configure a UART port (usartOpen()) but cannot set up an LCD (lcdInit()).
  */
-void initializeIO() {
-}
+void initializeIO() { }
 
 /*
  * Runs user initialization code. This function will be started in its own task with the default
@@ -58,5 +60,10 @@ void initializeIO() {
  * will not start. An autonomous mode selection menu like the pre_auton() in other environments
  * can be implemented in this task if desired.
  */
-void initialize() {
+void initialize()
+{
+	lfilterInit(FRONT_LEFT_MOTOR_CHANNEL, DRIVE_NUM_FILTER_CYCLES);
+	lfilterInit(FRONT_RIGHT_MOTOR_CHANNEL, DRIVE_NUM_FILTER_CYCLES);
+	lfilterInit(BACK_LEFT_MOTOR_CHANNEL, DRIVE_NUM_FILTER_CYCLES);
+	lfilterInit(BACK_RIGHT_MOTOR_CHANNEL, DRIVE_NUM_FILTER_CYCLES);
 }

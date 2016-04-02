@@ -37,11 +37,55 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "togglebtn.h"
+#include "lfilter.h"
 
 #define JOYSTICK_SLOT 1
 
 #define CLAW_SPEED 60
 #define GRIP_STRENGTH 30
+
+#define DRIVE_AXIS 3
+#define STRAFE_AXIS 4
+#define ROTATION_AXIS 1
+
+#define DIAGONAL_DRIVE_DEADBAND 30
+
+void drive(int8_t vx, int8_t vy, int8_t r) {
+	int16_t speed[4];	// one for each wheel
+	int16_t absRawSpeed, maxRawSpeed;
+	int8_t i;
+
+	speed[0] = vy + vx + r;		// front left
+	speed[1] = vy - vx + r;		// back left
+	speed[2] = -vy + vx + r;	// front right
+	speed[3] = -vy - vx + r;	// back right
+
+	maxRawSpeed = 0;
+	for (i = 0; i < 4; ++i) {
+		absRawSpeed = abs(speed[i]);
+		if (absRawSpeed > maxRawSpeed) {
+			maxRawSpeed = absRawSpeed;
+		}
+	}
+
+	if (maxRawSpeed > MAX_SPEED) {	// TODO: replace MAXIMUM_SHOOTER_CAP with macro
+		float scale = (float) maxRawSpeed / MAX_SPEED;
+		for (i = 0; i < 4; ++i) {
+			speed[i] /= scale;
+		}
+	}
+
+	// Linear filtering for gradual acceleration and reduced motor wear
+	speed[0] = getfSpeed(FRONT_LEFT_MOTOR_CHANNEL, speed[0]);
+	speed[1] = getfSpeed(BACK_LEFT_MOTOR_CHANNEL, speed[1]);
+	speed[2] = getfSpeed(FRONT_RIGHT_MOTOR_CHANNEL, speed[2]);
+	speed[3] = getfSpeed(BACK_RIGHT_MOTOR_CHANNEL, speed[3]);
+
+	motorSet(FRONT_LEFT_MOTOR_CHANNEL, speed[0]);
+	motorSet(BACK_LEFT_MOTOR_CHANNEL, speed[1]);
+	motorSet(FRONT_RIGHT_MOTOR_CHANNEL, speed[2]);
+	motorSet(BACK_RIGHT_MOTOR_CHANNEL, speed[3]);
+}
 
 /*
  * Runs the user operator control code. This function will be started in its own task with the
@@ -62,8 +106,10 @@
  */
 void operatorControl()
 {
+	// drive code
+	int8_t xSpeed, ySpeed, rotation;
+
 	// claw code
-	// MUST start with claw FULLY open
 	bool closeClaw = false;
 	int8_t duration = 20;	// TODO see how long claw really takes to open/close
 	int8_t i = 0;
@@ -71,13 +117,30 @@ void operatorControl()
 	toggleBtnInit(JOYSTICK_SLOT, 8, JOY_DOWN);	// TODO assign real values
 
 	while (true) {
+		// drive code
+		xSpeed = (int8_t) joystickGetAnalog(JOYSTICK_SLOT, STRAFE_AXIS);
+		ySpeed = (int8_t) joystickGetAnalog(JOYSTICK_SLOT, DRIVE_AXIS);
+		rotation = (int8_t) joystickGetAnalog(JOYSTICK_SLOT, ROTATION_AXIS) / 2;	// change rotation controls if needed
+
+		if (abs(ySpeed) < DIAGONAL_DRIVE_DEADBAND) {
+			ySpeed = 0;
+		}
+
+		if (abs(xSpeed) < DIAGONAL_DRIVE_DEADBAND) {
+			xSpeed = 0;
+		}
+
+		drive(xSpeed, ySpeed, rotation);
+
+		// claw code
+		// MUST start with claw FULLY open
 		if (toggleBtnGet(JOYSTICK_SLOT, 8, JOY_DOWN) == BUTTON_PRESSED) {
 			closeClaw = !closeClaw;
 		}
 
 		if (closeClaw) {
 			if (i++ < duration) {
-				motorSet(CLAW_MOTOR_CHANNEL, CLAW_SPEED);
+				motorSet(CLAW_MOTOR_CHANNEL, CLAW_SPEED);	// TODO for the claw which direction is positive?
 			} else {
 				motorSet(CLAW_MOTOR_CHANNEL, GRIP_STRENGTH);
 			}

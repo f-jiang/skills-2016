@@ -50,6 +50,14 @@
 extern "C" {
 #endif
 
+#define MAX_SPEED 127
+#define MIN_SPEED (-127)
+
+#define FRONT_LEFT_MOTOR_CHANNEL 2
+#define FRONT_RIGHT_MOTOR_CHANNEL 3
+#define BACK_LEFT_MOTOR_CHANNEL 4
+#define BACK_RIGHT_MOTOR_CHANNEL 5
+
 #define CLAW_MOTOR_CHANNEL 0
 
 // A function prototype looks exactly like its declaration, but with a semicolon instead of
