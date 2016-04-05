@@ -40,17 +40,24 @@
 #include "lfilter.h"
 
 //#define PID_ARM
+#define JOYSTICK_ARM
 
 #define JOYSTICK_SLOT 1
 
 #define CLAW_SPEED -60
+#define CLAW_OPEN_DURATION 30
 #define GRIP_STRENGTH -40
 
 #define DRIVE_AXIS 3
 #define STRAFE_AXIS 4
 #define ROTATION_AXIS 1
 
+#ifdef JOYSTICK_ARM
 #define ARM_AXIS 2
+#else
+#define ARM_BUTTON_GROUP 6
+#endif
+
 #define ARM_MAX_SPEED 50
 
 #define DIAGONAL_DRIVE_DEADBAND 30
@@ -73,7 +80,7 @@ void drive(int8_t vx, int8_t vy, int8_t r) {
 		}
 	}
 
-	if (maxRawSpeed > MAX_SPEED) {	// TODO: replace MAXIMUM_SHOOTER_CAP with macro
+	if (maxRawSpeed > MAX_SPEED) {
 		float scale = (float) maxRawSpeed / MAX_SPEED;
 		for (i = 0; i < 4; ++i) {
 			speed[i] /= scale;
@@ -116,19 +123,26 @@ void operatorControl()
 
 	// claw code
 	bool closeClaw = false;
-	int8_t duration = 30;	// TODO see how long claw really takes to open/close
 	int8_t i = 0;
 
-	toggleBtnInit(JOYSTICK_SLOT, 8, JOY_DOWN);	// TODO assign real values
+	toggleBtnInit(JOYSTICK_SLOT, 8, JOY_DOWN);
 
 	// arm code
-	int8_t armSpeed = 0;
+	float armSpeed = 0;
 
 	while (true) {
 		// drive code
 		xSpeed = (int8_t) joystickGetAnalog(JOYSTICK_SLOT, STRAFE_AXIS);
 		ySpeed = (int8_t) joystickGetAnalog(JOYSTICK_SLOT, DRIVE_AXIS);
-		rotation = (int8_t) joystickGetAnalog(JOYSTICK_SLOT, ROTATION_AXIS) / 2;	// change rotation controls if needed
+#ifdef JOYSTICK_ARM
+		if (!joystickGetDigital(JOYSTICK_SLOT, 6, JOY_UP)) {	// only rotate if not controlling arm
+			rotation = (int8_t) joystickGetAnalog(JOYSTICK_SLOT, ROTATION_AXIS) / 2;
+		} else {
+			rotation = 0;
+		}
+#else
+		rotation = (int8_t) joystickGetAnalog(JOYSTICK_SLOT, ROTATION_AXIS) / 2;
+#endif
 
 		if (abs(ySpeed) < DIAGONAL_DRIVE_DEADBAND) {
 			ySpeed = 0;
@@ -147,9 +161,9 @@ void operatorControl()
 		}
 
 		if (closeClaw) {
-			if (i < duration) {
+			if (i < CLAW_OPEN_DURATION) {
 				++i;
-				motorSet(CLAW_MOTOR_CHANNEL, CLAW_SPEED);	// TODO for the claw which direction is positive?
+				motorSet(CLAW_MOTOR_CHANNEL, CLAW_SPEED);
 			} else {
 				motorSet(CLAW_MOTOR_CHANNEL, GRIP_STRENGTH);
 			}
@@ -164,10 +178,24 @@ void operatorControl()
 #ifdef PID_ARM
 
 #else
-		armSpeed = (float) (joystickGetAnalog(JOYSTICK_SLOT, ARM_AXIS) / 127) * ARM_MAX_SPEED;
-		motorSet(ARM_LEFT_MOTOR_CHANNEL, -armSpeed);
-		motorSet(ARM_RIGHT_MOTOR_CHANNEL, armSpeed);
+# ifdef JOYSTICK_ARM
+		if (joystickGetDigital(JOYSTICK_SLOT, 6, JOY_UP)) {
+			armSpeed = (float) joystickGetAnalog(JOYSTICK_SLOT, ARM_AXIS) / MAX_SPEED * ARM_MAX_SPEED;
+		} else {
+			armSpeed = 0;
+		}
+# else
+		if (joystickGetDigital(JOYSTICK_SLOT, ARM_BUTTON_GROUP, JOY_UP)) {
+			armSpeed = ARM_MAX_SPEED;
+		} else if (joystickGetDigital(JOYSTICK_SLOT, ARM_BUTTON_GROUP, JOY_DOWN)) {
+			armSpeed = -ARM_MAX_SPEED;
+		} else {
+			armSpeed = 0;
+		}
+# endif
 #endif
+		motorSet(ARM_LEFT_MOTOR_CHANNEL, (int) -armSpeed);
+		motorSet(ARM_RIGHT_MOTOR_CHANNEL, (int) armSpeed);
 
 		toggleBtnUpdateAll();
 		delay(20);
