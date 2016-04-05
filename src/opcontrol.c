@@ -39,14 +39,19 @@
 #include "togglebtn.h"
 #include "lfilter.h"
 
+//#define PID_ARM
+
 #define JOYSTICK_SLOT 1
 
-#define CLAW_SPEED 60
-#define GRIP_STRENGTH 30
+#define CLAW_SPEED -60
+#define GRIP_STRENGTH -40
 
 #define DRIVE_AXIS 3
 #define STRAFE_AXIS 4
 #define ROTATION_AXIS 1
+
+#define ARM_AXIS 2
+#define ARM_MAX_SPEED 50
 
 #define DIAGONAL_DRIVE_DEADBAND 30
 
@@ -111,7 +116,7 @@ void operatorControl()
 
 	// claw code
 	bool closeClaw = false;
-	int8_t duration = 20;	// TODO see how long claw really takes to open/close
+	int8_t duration = 30;	// TODO see how long claw really takes to open/close
 	int8_t i = 0;
 
 	toggleBtnInit(JOYSTICK_SLOT, 8, JOY_DOWN);	// TODO assign real values
@@ -139,17 +144,27 @@ void operatorControl()
 		}
 
 		if (closeClaw) {
-			if (i++ < duration) {
+			if (i < duration) {
+				++i;
 				motorSet(CLAW_MOTOR_CHANNEL, CLAW_SPEED);	// TODO for the claw which direction is positive?
 			} else {
 				motorSet(CLAW_MOTOR_CHANNEL, GRIP_STRENGTH);
 			}
-		} else if (i-- > 0) {
+		} else if (i > 0) {
+			--i;
 			motorSet(CLAW_MOTOR_CHANNEL, -CLAW_SPEED);
 		} else {
 			motorSet(CLAW_MOTOR_CHANNEL, 0);
 		}
 
+		// arm code
+#ifdef PID_ARM
+
+#else
+		motorSet(ARM_MOTOR_CHANNEL, (float) (joystickGetAnalog(JOYSTICK_SLOT, ARM_AXIS) / 127) * ARM_MAX_SPEED);
+#endif
+
+		toggleBtnUpdateAll();
 		delay(20);
 	}
 }
