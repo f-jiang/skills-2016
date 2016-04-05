@@ -121,6 +121,9 @@ void operatorControl()
 
 	toggleBtnInit(JOYSTICK_SLOT, 8, JOY_DOWN);	// TODO assign real values
 
+	// arm code
+	int8_t armSpeed = 0;
+
 	while (true) {
 		// drive code
 		xSpeed = (int8_t) joystickGetAnalog(JOYSTICK_SLOT, STRAFE_AXIS);
@@ -161,7 +164,9 @@ void operatorControl()
 #ifdef PID_ARM
 
 #else
-		motorSet(ARM_MOTOR_CHANNEL, (float) (joystickGetAnalog(JOYSTICK_SLOT, ARM_AXIS) / 127) * ARM_MAX_SPEED);
+		armSpeed = (float) (joystickGetAnalog(JOYSTICK_SLOT, ARM_AXIS) / 127) * ARM_MAX_SPEED;
+		motorSet(ARM_LEFT_MOTOR_CHANNEL, -armSpeed);
+		motorSet(ARM_RIGHT_MOTOR_CHANNEL, armSpeed);
 #endif
 
 		toggleBtnUpdateAll();
