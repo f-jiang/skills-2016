@@ -58,7 +58,7 @@
 #define ARM_BUTTON_GROUP 6
 #endif
 
-#define ARM_MAX_SPEED 50
+#define ARM_MAX_SPEED MAX_SPEED
 
 #define DIAGONAL_DRIVE_DEADBAND 30
 
