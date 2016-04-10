@@ -57,8 +57,10 @@
 #else
 #define ARM_BUTTON_GROUP 6
 #endif
-
 #define ARM_MAX_SPEED MAX_SPEED
+
+#define FORKLIFT_AXIS 2
+#define FORKLIFT_MAX_SPEED MAX_SPEED
 
 #define DIAGONAL_DRIVE_DEADBAND 30
 
@@ -130,6 +132,9 @@ void operatorControl()
 	// arm code
 	float armSpeed = 0;
 
+	// forklift code
+	float forkliftSpeed = 0;
+
 	while (true) {
 		// drive code
 		xSpeed = (int8_t) joystickGetAnalog(JOYSTICK_SLOT, STRAFE_AXIS);
@@ -196,6 +201,19 @@ void operatorControl()
 #endif
 		motorSet(ARM_LEFT_MOTOR_CHANNEL, (int) -armSpeed);
 		motorSet(ARM_RIGHT_MOTOR_CHANNEL, (int) armSpeed);
+
+		// forklift code
+		if (joystickGetDigital(JOYSTICK_SLOT, 6, JOY_DOWN) &&
+				!(digitalRead(BOTTOM_LIMIT_SWITCH_CHANNEL) && forkliftSpeed < 0) &&
+				!(digitalRead(TOP_LIMIT_SWITCH_CHANNEL) && forkliftSpeed > 0)) {
+			forkliftSpeed = (float) joystickGetAnalog(JOYSTICK_SLOT, FORKLIFT_AXIS) / MAX_SPEED * FORKLIFT_MAX_SPEED;
+		} else {
+			forkliftSpeed = 0;
+		}
+
+		motorSet(FORKLIFT_LEFT_MOTOR_CHANNEL, (int) -forkliftSpeed);
+		motorSet(FORKLIFT_RIGHT_MOTOR_CHANNEL, (int) forkliftSpeed);
+
 
 		toggleBtnUpdateAll();
 		delay(20);

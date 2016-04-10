@@ -62,6 +62,12 @@ extern "C" {
 #define ARM_RIGHT_MOTOR_CHANNEL 6
 #define ARM_LEFT_MOTOR_CHANNEL 8
 
+// TODO replace with actual port numbers
+#define FORKLIFT_LEFT_MOTOR_CHANNEL 1
+#define FORKLIFT_RIGHT_MOTOR_CHANNEL 4
+#define TOP_LIMIT_SWITCH_CHANNEL 1
+#define BOTTOM_LIMIT_SWITCH_CHANNEL 2
+
 // A function prototype looks exactly like its declaration, but with a semicolon instead of
 // actual code. If a function does not match a prototype, compile errors will occur.
 
