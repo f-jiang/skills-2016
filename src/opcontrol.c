@@ -140,10 +140,10 @@ void operatorControl()
 		xSpeed = (int8_t) joystickGetAnalog(JOYSTICK_SLOT, STRAFE_AXIS);
 		ySpeed = (int8_t) joystickGetAnalog(JOYSTICK_SLOT, DRIVE_AXIS);
 #ifdef JOYSTICK_ARM
-		if (!joystickGetDigital(JOYSTICK_SLOT, 6, JOY_UP)) {	// only rotate if not controlling arm
-			rotation = (int8_t) joystickGetAnalog(JOYSTICK_SLOT, ROTATION_AXIS) / 2;
-		} else {
+		if (joystickGetDigital(JOYSTICK_SLOT, 6, JOY_UP) || joystickGetDigital(JOYSTICK_SLOT, 6, JOY_DOWN)) {	// only rotate if not controlling arm
 			rotation = 0;
+		} else {
+			rotation = (int8_t) joystickGetAnalog(JOYSTICK_SLOT, ROTATION_AXIS) / 2;
 		}
 #else
 		rotation = (int8_t) joystickGetAnalog(JOYSTICK_SLOT, ROTATION_AXIS) / 2;
@@ -211,7 +211,7 @@ void operatorControl()
 			forkliftSpeed = 0;
 		}
 
-		motorSet(FORKLIFT_LEFT_MOTOR_CHANNEL, (int) -forkliftSpeed);
+		motorSet(FORKLIFT_LEFT_MOTOR_CHANNEL, (int) forkliftSpeed);
 		motorSet(FORKLIFT_RIGHT_MOTOR_CHANNEL, (int) forkliftSpeed);
 
 
