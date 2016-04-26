@@ -62,6 +62,8 @@
 #define FORKLIFT_AXIS 2
 #define FORKLIFT_MAX_SPEED MAX_SPEED
 
+#define BED_SPEED 60
+
 #define DIAGONAL_DRIVE_DEADBAND 30
 
 void drive(int8_t vx, int8_t vy, int8_t r) {
@@ -135,6 +137,9 @@ void operatorControl()
 	// forklift code
 	float forkliftSpeed = 0;
 
+	// bed code
+	float bedSpeed = 0;
+
 	while (true) {
 		// drive code
 		xSpeed = (int8_t) joystickGetAnalog(JOYSTICK_SLOT, STRAFE_AXIS);
@@ -199,8 +204,7 @@ void operatorControl()
 		}
 # endif
 #endif
-		motorSet(ARM_LEFT_MOTOR_CHANNEL, (int) -armSpeed);
-		motorSet(ARM_RIGHT_MOTOR_CHANNEL, (int) armSpeed);
+		motorSet(ARM_MOTOR_CHANNEL, (int) armSpeed);
 
 		// forklift code
 		if (joystickGetDigital(JOYSTICK_SLOT, 6, JOY_DOWN) &&
@@ -211,9 +215,18 @@ void operatorControl()
 			forkliftSpeed = 0;
 		}
 
-		motorSet(FORKLIFT_LEFT_MOTOR_CHANNEL, (int) forkliftSpeed);
-		motorSet(FORKLIFT_RIGHT_MOTOR_CHANNEL, (int) forkliftSpeed);
+		motorSet(FORKLIFT_MOTOR_CHANNEL, (int) forkliftSpeed);
 
+		// bed code
+		if (joystickGetDigital(JOYSTICK_SLOT, 5, JOY_UP)) {
+			bedSpeed = BED_SPEED;
+		} else if (joystickGetDigital(JOYSTICK_SLOT, 5, JOY_DOWN)) {
+			bedSpeed = -BED_SPEED;
+		} else {
+			bedSpeed = 0;
+		}
+
+		motorSet(BED_MOTOR_CHANNEL, (int) bedSpeed);
 
 		toggleBtnUpdateAll();
 		delay(20);
