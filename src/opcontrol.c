@@ -36,6 +36,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <math.h>
 #include "togglebtn.h"
 #include "lfilter.h"
 
@@ -190,7 +191,8 @@ void operatorControl()
 #else
 # ifdef JOYSTICK_ARM
 		if (joystickGetDigital(JOYSTICK_SLOT, 6, JOY_UP)) {
-			armSpeed = (float) joystickGetAnalog(JOYSTICK_SLOT, ARM_AXIS) / MAX_SPEED * ARM_MAX_SPEED;
+			armSpeed = (float) joystickGetAnalog(JOYSTICK_SLOT, ARM_AXIS) / MAX_SPEED;
+			armSpeed *= fabs(armSpeed) * ARM_MAX_SPEED;
 		} else {
 			armSpeed = 0;
 		}
