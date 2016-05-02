@@ -123,8 +123,14 @@ void drive(int8_t vx, int8_t vy, int8_t r) {
  */
 void operatorControl()
 {
+	// misc controls
+	bool lowSpeed = false;
+
+	toggleBtnInit(JOYSTICK_SLOT, 8, JOY_LEFT);	// reset claw
+	toggleBtnInit(JOYSTICK_SLOT, 8, JOY_RIGHT);	// toggle low speed mode
+
 	// drive code
-	int8_t xSpeed, ySpeed, rotation;
+	int8_t xSpeed, ySpeed, rotation;	//
 
 	// claw code
 	bool closeClaw = false;
@@ -133,7 +139,7 @@ void operatorControl()
 	toggleBtnInit(JOYSTICK_SLOT, 8, JOY_DOWN);
 
 	// arm code
-	float armSpeed = 0;
+	float armSpeed = 0;	//
 
 	// forklift code
 	float forkliftSpeed = 0;
@@ -142,6 +148,11 @@ void operatorControl()
 	float bedSpeed = 0;
 
 	while (true) {
+		// low speed mode toggle
+		if (toggleBtnGet(JOYSTICK_SLOT, 8, JOY_RIGHT) == BUTTON_PRESSED) {
+			lowSpeed = !lowSpeed;
+		}
+
 		// drive code
 		xSpeed = (int8_t) joystickGetAnalog(JOYSTICK_SLOT, STRAFE_AXIS);
 		ySpeed = (int8_t) joystickGetAnalog(JOYSTICK_SLOT, DRIVE_AXIS);
@@ -163,26 +174,38 @@ void operatorControl()
 			xSpeed = 0;
 		}
 
-		drive(xSpeed, ySpeed, rotation);
+		if (lowSpeed) {
+			drive(xSpeed / 2, ySpeed / 2, rotation / 2);
+		} else {
+			drive(xSpeed, ySpeed, rotation);
+		}
 
 		// claw code
 		// MUST start with claw FULLY open
-		if (toggleBtnGet(JOYSTICK_SLOT, 8, JOY_DOWN) == BUTTON_PRESSED) {
-			closeClaw = !closeClaw;
-		}
-
-		if (closeClaw) {
-			if (i < CLAW_OPEN_DURATION) {
-				++i;
-				motorSet(CLAW_MOTOR_CHANNEL, CLAW_SPEED);
-			} else {
-				motorSet(CLAW_MOTOR_CHANNEL, GRIP_STRENGTH);
-			}
-		} else if (i > 0) {
-			--i;
+		if (toggleBtnGet(JOYSTICK_SLOT, 8, JOY_LEFT) == BUTTON_HELD) {
 			motorSet(CLAW_MOTOR_CHANNEL, -CLAW_SPEED);
-		} else {
+		} else if (toggleBtnGet(JOYSTICK_SLOT, 8, JOY_LEFT) == BUTTON_RELEASED) {
 			motorSet(CLAW_MOTOR_CHANNEL, 0);
+			closeClaw = false;
+			i = 0;
+		} else {
+			if (toggleBtnGet(JOYSTICK_SLOT, 8, JOY_DOWN) == BUTTON_PRESSED) {
+				closeClaw = !closeClaw;
+			}
+
+			if (closeClaw) {
+				if (i < CLAW_OPEN_DURATION) {
+					++i;
+					motorSet(CLAW_MOTOR_CHANNEL, CLAW_SPEED);
+				} else {
+					motorSet(CLAW_MOTOR_CHANNEL, GRIP_STRENGTH);
+				}
+			} else if (i > 0) {
+				--i;
+				motorSet(CLAW_MOTOR_CHANNEL, -CLAW_SPEED);
+			} else {
+				motorSet(CLAW_MOTOR_CHANNEL, 0);
+			}
 		}
 
 		// arm code
@@ -206,7 +229,11 @@ void operatorControl()
 		}
 # endif
 #endif
-		motorSet(ARM_MOTOR_CHANNEL, (int) armSpeed);
+		if (lowSpeed) {
+			motorSet(ARM_MOTOR_CHANNEL, (int) armSpeed / 2);
+		} else {
+			motorSet(ARM_MOTOR_CHANNEL, (int) armSpeed);
+		}
 
 		// forklift code
 		if (joystickGetDigital(JOYSTICK_SLOT, 6, JOY_DOWN) &&
